@@ -38,10 +38,13 @@ game.on('lost', function () {
   $('#message').html('<h2>You lost!</h2>');
 });
 
+var lastTime = Date.now();
 
 /**
  * Main loop
  * For now, the snake will slow down as it gets larger, which can be fixed
+ * Some testing shows that computers are so fast that even huge snakes do not actually slow
+ * the snake down (at least on my machine). I'll probably now optimize it :)
  */
 setInterval(function () {
   if (paused || stopped) { return; }

@@ -13,6 +13,7 @@ function Game (_opts) {
     this.snake[i] = { x: x0 - i, y: y0 };
   }
   this.snakeDirection = Game.directions.RIGHT;
+  this.commands = [];
 
   // Board parameters
   this.squareSize = opts.squareSize || 16;
@@ -87,6 +88,8 @@ Game.prototype.generateApple = function (_x, _y) {
  * Move time forward by one tick, so the snake moves by one square
  */
 Game.prototype.tick = function () {
+  if (this.commands.length > 0) { this.snakeDirection = this.commands.shift(); }
+
   // Eating an apple - Detecting collision, removing apple and placing new one
   var i;
   if (this.apples[this.snake[0].x + '-' + this.snake[0].y]) {
@@ -107,9 +110,7 @@ Game.prototype.tick = function () {
   this.snake[0].y = this.snake[1].y + Game.movements[this.snakeDirection].y;
 
   // Eating an apple - Grow snake
-  if (this.segmentsToAdd.length > 0) {
-    this.snake.push(this.segmentsToAdd.shift());
-  }
+  if (this.segmentsToAdd.length > 0) { this.snake.push(this.segmentsToAdd.shift()); }
 
   // Collisions
   if (this.snake[0].x < 0 || this.snake[0].x >= this.boardX || this.snake[0].y < 0 || this.snake[0].y >= this.boardY) {
@@ -132,6 +133,7 @@ Game.prototype.redrawSnake = function (redrawAll) {
 
   // TODO: actually use redrawAll
   // TODO: don't redraw everything
+  // TODO: use 6 different snake tiles to have a nice, non overlapping snake
 
   this.$container.find('div.snake-body').remove();
   this.snake.forEach(function (p) {
@@ -149,10 +151,14 @@ Game.prototype.redrawSnake = function (redrawAll) {
 /**
  * Do a turn
  * Don't turn backwards in one go, that's a stupid automatic loss
+ * Change direction as soon as possible. If two commands are fired between two ticks,
+ * record them and play on two adjacent ticks (very fast players  will hate this gameplay otherwise)
+ * TODO: should really limit this.commands to size 2 and not record additional commands but given
+ *       the typical snake speed that is not necessary
  */
 Game.prototype.changeDirection = function (newDirection) {
-  if (newDirection === Game.getOppositeDirection(this.snakeDirection)) { return; }
-  this.snakeDirection = newDirection;
+  if (newDirection === Game.getOppositeDirection(this.snakeDirection) && this.commands.length === 0) { return; }
+  this.commands.push(newDirection);
 };
 
 

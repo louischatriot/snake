@@ -26,6 +26,7 @@ function Game (_opts) {
 
   // Apples. Hmmm, apples
   this.apples = {};
+  this.generateApple();
 }
 
 Game.directions = { LEFT: 'left', RIGHT: 'right', BOTTOM: 'bottom', TOP: 'top' };
@@ -58,6 +59,7 @@ Game.prototype.generateApple = function (_x, _y) {
  * Move time forward by one tick, so the snake moves by one square
  */
 Game.prototype.tick = function () {
+  // Eating an apple, part 1
   var newSegment;
   if (this.apples[this.snake[0].x + '-' + this.snake[0].y]) {
     newSegment = { x: this.snake[this.snake.length - 1].x, y: this.snake[this.snake.length - 1].y };
@@ -65,6 +67,7 @@ Game.prototype.tick = function () {
     delete this.apples[this.snake[0].x + '-' + this.snake[0].y];
   }
 
+  // Translate snake segments
   for (var i = this.snake.length - 2; i >= 0; i -= 1) {
     this.snake[i + 1] = this.snake[i];
   }
@@ -72,9 +75,18 @@ Game.prototype.tick = function () {
   this.snake[0].x = this.snake[1].x + Game.movements[this.snakeDirection].x;
   this.snake[0].y = this.snake[1].y + Game.movements[this.snakeDirection].y;
 
+  // Eating an apple, part 2
   if (newSegment) { this.snake.push(newSegment); }
 
-  // TODO: handle collisions here
+  // Collisions
+  if (this.snake[0].x < 0 || this.snake[0].x >= this.boardX || this.snake[0].y < 0 || this.snake[0].y >= this.boardY) {
+    throw new Error("You lose, out of bounds!");
+  }
+  for (i = 1; i < this.snake.length; i += 1) {
+    if (this.snake[0].x === this.snake[i].x && this.snake[0].y === this.snake[i].y) {
+      throw new Error("You lose, eating yourself!");
+    }
+  }
 };
 
 

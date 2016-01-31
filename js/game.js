@@ -22,9 +22,12 @@ function Game (_opts) {
   this.$container.height(this.squareSize * this.boardY);
   this.$container.css('border', '1px solid black');
 
-  // Apples. Hmmm, apples
+  // Apples. Hmmm, apples.
   this.apples = {};
-  this.generateApple();
+  this.sizeIncreasePerApple = opts.sizeIncreasePerApple || 7;
+  this.applesOnMap = opts.applesOnMap || 4;
+  for (var i = 0; i < this.applesOnMap; i += 1) { this.generateApple(); }
+  this.segmentsToAdd = [];
 
   // Event emitter
   this.listeners = {};
@@ -62,7 +65,8 @@ Game.getOppositeDirection = function (direction) {
 
 
 /**
- * Generate an apple. Currently doesn't check for existing apples at that spot
+ * Generate an apple.
+ * TODO: don't generate apples on taken spots (by another apple or the snake)
  */
 Game.prototype.generateApple = function (_x, _y) {
   var x = _x || 1 + Math.floor(Math.random() * (this.boardX - 1));
@@ -83,24 +87,29 @@ Game.prototype.generateApple = function (_x, _y) {
  * Move time forward by one tick, so the snake moves by one square
  */
 Game.prototype.tick = function () {
-  // Eating an apple, part 1
-  var newSegment;
+  // Eating an apple - Detecting collision, removing apple and placing new one
+  var i;
   if (this.apples[this.snake[0].x + '-' + this.snake[0].y]) {
-    newSegment = { x: this.snake[this.snake.length - 1].x, y: this.snake[this.snake.length - 1].y };
+    for (i = 0; i < this.sizeIncreasePerApple; i += 1) {
+      this.segmentsToAdd.push({ x: this.snake[this.snake.length - 1].x, y: this.snake[this.snake.length - 1].y });
+    }
+    this.generateApple();
     this.apples[this.snake[0].x + '-' + this.snake[0].y].remove();
     delete this.apples[this.snake[0].x + '-' + this.snake[0].y];
   }
 
   // Translate snake segments
-  for (var i = this.snake.length - 2; i >= 0; i -= 1) {
+  for (i = this.snake.length - 2; i >= 0; i -= 1) {
     this.snake[i + 1] = this.snake[i];
   }
   this.snake[0] = {};
   this.snake[0].x = this.snake[1].x + Game.movements[this.snakeDirection].x;
   this.snake[0].y = this.snake[1].y + Game.movements[this.snakeDirection].y;
 
-  // Eating an apple, part 2
-  if (newSegment) { this.snake.push(newSegment); }
+  // Eating an apple - Grow snake
+  if (this.segmentsToAdd.length > 0) {
+    this.snake.push(this.segmentsToAdd.shift());
+  }
 
   // Collisions
   if (this.snake[0].x < 0 || this.snake[0].x >= this.boardX || this.snake[0].y < 0 || this.snake[0].y >= this.boardY) {

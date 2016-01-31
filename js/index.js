@@ -1,5 +1,6 @@
 var game = new Game()
   , paused = false
+  , stopped = false
   ;
 
 /**
@@ -30,11 +31,21 @@ $('body').on('keydown', function (e) {
 
 
 /**
+ * Game lost
+ */
+game.on('lost', function () {
+  stopped = true;
+  $('#message').html('<h2>You lost!</h2>');
+});
+
+
+/**
  * Main loop
  * For now, the snake will slow down as it gets larger, which can be fixed
  */
 setInterval(function () {
-  if (paused) { return; }
+  if (paused || stopped) { return; }
   game.tick();
+  if (stopped) { return; }   // Game can be stopped by a tick, don't redraw then
   game.redrawSnake();
 }, 100);

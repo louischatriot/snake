@@ -17,9 +17,7 @@ function Game (_opts) {
   // Board parameters
   this.squareSize = opts.squareSize || 16;
   this.$container = $(opts.containerId || '#board');
-  this.$container.css('position', 'fixed');
-  this.$container.css('left', '0px');
-  this.$container.css('top', '0px');
+  this.$container.css('position', 'relative');
   this.$container.width(this.squareSize * this.boardX);
   this.$container.height(this.squareSize * this.boardY);
   this.$container.css('border', '1px solid black');
@@ -27,6 +25,9 @@ function Game (_opts) {
   // Apples. Hmmm, apples
   this.apples = {};
   this.generateApple();
+
+  // Event emitter
+  this.listeners = {};
 }
 
 Game.directions = { LEFT: 'left', RIGHT: 'right', BOTTOM: 'bottom', TOP: 'top' };
@@ -35,6 +36,29 @@ Game.movements[Game.directions.LEFT] = { x: -1, y: 0 };
 Game.movements[Game.directions.RIGHT] = { x: 1, y: 0 };
 Game.movements[Game.directions.BOTTOM] = { x: 0, y: 1 };
 Game.movements[Game.directions.TOP] = { x: 0, y: -1 };
+
+// Event Emitter
+Game.prototype.on = function(evt, listener) {
+  if (!this.listeners[evt]) { this.listeners[evt] = []; }
+  this.listeners[evt].push(listener);
+};
+
+Game.prototype.emit = function (evt, message) {
+  if (this.listeners[evt]) {
+    this.listeners[evt].forEach(function (fn) { fn(message); });
+  }
+};
+
+
+/**
+ * Pretty self-explaining
+ */
+Game.getOppositeDirection = function (direction) {
+  if (direction === Game.directions.LEFT) { return Game.directions.RIGHT; }
+  if (direction === Game.directions.RIGHT) { return Game.directions.LEFT; }
+  if (direction === Game.directions.TOP) { return Game.directions.BOTTOM; }
+  if (direction === Game.directions.BOTTOM) { return Game.directions.TOP; }
+};
 
 
 /**
@@ -80,11 +104,11 @@ Game.prototype.tick = function () {
 
   // Collisions
   if (this.snake[0].x < 0 || this.snake[0].x >= this.boardX || this.snake[0].y < 0 || this.snake[0].y >= this.boardY) {
-    throw new Error("You lose, out of bounds!");
+    this.emit('lost');
   }
   for (i = 1; i < this.snake.length; i += 1) {
     if (this.snake[0].x === this.snake[i].x && this.snake[0].y === this.snake[i].y) {
-      throw new Error("You lose, eating yourself!");
+      this.emit('lost');
     }
   }
 };
@@ -114,9 +138,11 @@ Game.prototype.redrawSnake = function (redrawAll) {
 
 
 /**
- * Pretty self-explaining
+ * Do a turn
+ * Don't turn backwards in one go, that's a stupid automatic loss
  */
 Game.prototype.changeDirection = function (newDirection) {
+  if (newDirection === Game.getOppositeDirection(this.snakeDirection)) { return; }
   this.snakeDirection = newDirection;
 };
 

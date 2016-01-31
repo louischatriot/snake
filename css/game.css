@@ -1,11 +1,11 @@
 .snake-body {
   background-color: #555;
-  position: fixed;
+  position: absolute;
   transition: left 0.1s, top 0.1s;   /* Will be useful only when reusing same divs */
 }
 
 .apple {
   background-color: darkred;
-  position: fixed;
+  position: absolute;
   border-radius: 50%;
 }

@@ -2,8 +2,8 @@ function Game (_opts) {
   var opts = _opts || {};
   this.snake = [];   // Implement as cyclic array for performance?
                      // For now index 0 points to the head
-  this.boardX = opts.boardX || 100;
-  this.boardY = opts.boardY || 60;
+  this.boardX = opts.boardX || 50;
+  this.boardY = opts.boardY || 30;
 
   // Snake starts at middle vertically and 1/3 starting from the left
   var x0 = Math.floor(this.boardX / 3);
@@ -15,7 +15,7 @@ function Game (_opts) {
   this.snakeDirection = Game.directions.RIGHT;
 
   // Board parameters
-  this.squareSize = opts.squareSize || 8;
+  this.squareSize = opts.squareSize || 16;
   this.$container = $(opts.containerId || '#board');
   this.$container.css('position', 'fixed');
   this.$container.css('left', '0px');

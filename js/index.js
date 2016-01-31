@@ -19,8 +19,11 @@ $('body').on('keydown', function (e) {
     case 40:
       game.changeDirection(Game.directions.BOTTOM);
       break;
-    case 27:
+    case 27:   // ESC
       paused = paused ? false : true;
+      break;
+    case 65:   // a
+      game.generateApple();
       break;
   }
 });

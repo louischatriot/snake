@@ -23,6 +23,9 @@ function Game (_opts) {
   this.$container.width(this.squareSize * this.boardX);
   this.$container.height(this.squareSize * this.boardY);
   this.$container.css('border', '1px solid black');
+
+  // Apples. Hmmm, apples
+  this.apples = {};
 }
 
 Game.directions = { LEFT: 'left', RIGHT: 'right', BOTTOM: 'bottom', TOP: 'top' };
@@ -34,10 +37,33 @@ Game.movements[Game.directions.TOP] = { x: 0, y: -1 };
 
 
 /**
+ * Generate an apple. Currently doesn't check for existing apples at that spot
+ */
+Game.prototype.generateApple = function (_x, _y) {
+  var x = _x || 1 + Math.floor(Math.random() * (this.boardX - 1));
+  var y = _y || 1 + Math.floor(Math.random() * (this.boardY - 1));
+
+  var $apple = $('<div class="apple">');
+  $apple.width(this.squareSize);
+  $apple.height(this.squareSize);
+  $apple.css('left', (x * this.squareSize) + 'px');
+  $apple.css('top', (y * this.squareSize) + 'px');
+
+  this.$container.append($apple);
+  this.apples[x + '-' + y] = $apple;
+};
+
+
+/**
  * Move time forward by one tick, so the snake moves by one square
  */
 Game.prototype.tick = function () {
-  // TODO: handle apples here
+  var newSegment;
+  if (this.apples[this.snake[0].x + '-' + this.snake[0].y]) {
+    newSegment = { x: this.snake[this.snake.length - 1].x, y: this.snake[this.snake.length - 1].y };
+    this.apples[this.snake[0].x + '-' + this.snake[0].y].remove();
+    delete this.apples[this.snake[0].x + '-' + this.snake[0].y];
+  }
 
   for (var i = this.snake.length - 2; i >= 0; i -= 1) {
     this.snake[i + 1] = this.snake[i];
@@ -45,6 +71,8 @@ Game.prototype.tick = function () {
   this.snake[0] = {};
   this.snake[0].x = this.snake[1].x + Game.movements[this.snakeDirection].x;
   this.snake[0].y = this.snake[1].y + Game.movements[this.snakeDirection].y;
+
+  if (newSegment) { this.snake.push(newSegment); }
 
   // TODO: handle collisions here
 };

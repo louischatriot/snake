@@ -4,6 +4,12 @@ function Game (_opts) {
                      // For now index 0 points to the head
   this.boardX = opts.boardX || 50;
   this.boardY = opts.boardY || 30;
+  this.empties = {};
+  for (var i = 0; i < this.boardX; i += 1) {
+    for (var j = 0; j < this.boardY; j += 1) {
+      this.empties[i + '-' + j] = true;
+    }
+  }
 
   // Snake starts at middle vertically and 1/3 starting from the left
   var x0 = Math.floor(this.boardX / 3);
@@ -11,6 +17,7 @@ function Game (_opts) {
   var snakeStartLength = opts.snakeStartLength || 5;
   for (var i = 0; i < snakeStartLength; i += 1) {
     this.snake[i] = { x: x0 - i, y: y0 };
+    delete this.empties[(x0 - i) + '-' +y0];
   }
   this.snakeDirection = Game.directions.RIGHT;
   this.commands = [];
@@ -66,12 +73,21 @@ Game.getOppositeDirection = function (direction) {
 
 
 /**
- * Generate an apple.
- * TODO: don't generate apples on taken spots (by another apple or the snake)
+ * Generate an apple on an empty spot
  */
 Game.prototype.generateApple = function (_x, _y) {
   var x = _x || 1 + Math.floor(Math.random() * (this.boardX - 1));
   var y = _y || 1 + Math.floor(Math.random() * (this.boardY - 1));
+
+  // Only pick a random known to be empty spot if pure random didn't work
+  // The longer Object.keys(this.empties) take, the less likely it is to occur
+  // A better approach is likely possible with k-d tree but not necessary
+  if (!this.empties[x + '-' + y]) {
+    var id = Object.keys(this.empties);
+    id = id[Math.floor(Math.random() * id.length)];
+    x = id.split('-')[0];
+    y = id.split('-')[1];
+  }
 
   var $apple = $('<div class="apple">');
   $apple.width(this.squareSize);
@@ -81,6 +97,7 @@ Game.prototype.generateApple = function (_x, _y) {
 
   this.$container.append($apple);
   this.apples[x + '-' + y] = $apple;
+  delete this.empties[x + '-' + y];
 };
 
 
@@ -98,10 +115,13 @@ Game.prototype.tick = function () {
     }
     this.generateApple();
     this.apples[this.snake[0].x + '-' + this.snake[0].y].remove();
+    this.empties[this.snake[0].x + '-' + this.snake[0].y] = true;   // Redundant but for consistency
     delete this.apples[this.snake[0].x + '-' + this.snake[0].y];
   }
 
   // Translate snake segments
+  delete this.empties[this.snake[0].x + '-' + this.snake[0].y];
+  this.empties[this.snake[this.snake.length - 1].x + '-' + this.snake[this.snake.length - 1].y] = true;
   for (i = this.snake.length - 2; i >= 0; i -= 1) {
     this.snake[i + 1] = this.snake[i];
   }
@@ -110,7 +130,11 @@ Game.prototype.tick = function () {
   this.snake[0].y = this.snake[1].y + Game.movements[this.snakeDirection].y;
 
   // Eating an apple - Grow snake
-  if (this.segmentsToAdd.length > 0) { this.snake.push(this.segmentsToAdd.shift()); }
+  if (this.segmentsToAdd.length > 0) {
+    var newSegment = this.segmentsToAdd.shift();
+    this.snake.push(newSegment);
+    delete this.empties[newSegment.x + '-' + newSegment.y];
+  }
 
   // Collisions
   if (this.snake[0].x < 0 || this.snake[0].x >= this.boardX || this.snake[0].y < 0 || this.snake[0].y >= this.boardY) {

@@ -1,6 +1,7 @@
 var game = new Game()
   , paused = false
   , stopped = false
+  , speed = 100
   ;
 
 /**
@@ -22,9 +23,16 @@ $('body').on('keydown', function (e) {
       break;
     case 27:   // ESC
       paused = paused ? false : true;
+      main();
       break;
-    case 65:   // a
+    case 65:   // a (apple)
       game.generateApple();
+      break;
+    case 83:   // s (slower)
+      speed *= 1.1;
+      break;
+    case 70:   // f (faster)
+      speed /= 1.1;
       break;
   }
 });
@@ -46,9 +54,12 @@ var lastTime = Date.now();
  * Some testing shows that computers are so fast that even huge snakes do not actually slow
  * the snake down (at least on my machine). I'll probably now optimize it :)
  */
-setInterval(function () {
+function main () {
   if (paused || stopped) { return; }
   game.tick();
   if (stopped) { return; }   // Game can be stopped by a tick, don't redraw then
   game.redrawSnake();
-}, 100);
+
+  setTimeout(main, speed);
+}
+main();
